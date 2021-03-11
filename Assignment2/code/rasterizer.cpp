@@ -42,24 +42,25 @@ auto to_vec4(const Eigen::Vector3f& v3, float w = 1.0f)
 
 static bool insideTriangle(float x, float y, const Vector3f* _v)
 {   
-    // TODO : Implement this function to check if the point (x, y) is inside the triangle represented by _v[0], _v[1], _v[2]
-    Vector3f p = {x, y, 0};
+    // 先说一下原理 : 视频里有提, 三个顶点分别跟P点做cross, 如果方向相同, 就在三角形内.  判断方向相同可以用Z, 也可以用dot(因为点乘同方向大于0, 反方向小于0)
+    Vector3f p = {x, y, 0};   // 先定义一个点p, 其实这是一个二维的点, 但是我用二维向量做cross时报错, 所以就改成三维了,  这里需要注意
+    // 下面是取三角形, 三个顶点的坐标a,b,c,  有一点需要注意的是 _v其实是一个Vector3f的数组, 我觉得这样分步写有助于理解
     Vector3f a = _v[0];
     Vector3f b = _v[1];
     Vector3f c = _v[2];
-
+    // 三条边的向量
     Vector3f AB = b - a;
     Vector3f BC = c - b;
     Vector3f CA = a - c;
-
+    // 三个顶点到P的向量
     Vector3f AP = p - a;
     Vector3f BP = p - b;
     Vector3f CP = p - c;
-
+    // 分别做叉乘
     Vector3f d1 = AB.cross(AP);
     Vector3f d2 = BC.cross(BP);
     Vector3f d3 = CA.cross(CP);
-    
+    // 分别做点乘
     return (d1.dot(d2) > 0 && d2.dot(d3) > 0 && d3.dot(d1) > 0);
 }
 
@@ -123,16 +124,16 @@ void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf
 //Screen space rasterization
 void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     auto v = t.toVector4();
-
+    // 三角形3个顶点的齐次坐标
     Vector4f a = v[0];
     Vector4f b = v[1];
     Vector4f c = v[2];
-    
+    // 找到boudingbox的边界值
     int min_x = std::min(a.x(), std::min(b.x(), c.x()));
     int max_x = std::max(a.x(), std::max(b.x(), c.x()));
     int min_y = std::min(a.y(), std::min(b.y(), c.y()));
     int max_y = std::max(a.y(), std::max(b.y(), c.y()));
-
+    // 一个1*1像素分成4个小像素
     std::vector<Vector2f> corners = {
         {0.25,0.25},{0.25,0.75},{0.75,0.25},{0.75,0.75}
     };
@@ -141,7 +142,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     {
         for (int y = min_y; y <= max_y; y++)
         {
-            float rate = 0;
+            float rate = 0;       // 4个像素在三角形内的采样率
             float minDepth = FLT_MAX;
             for (auto pos : corners)
             {
@@ -152,29 +153,18 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
                     float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
                     z_interpolated *= w_reciprocal;
                     minDepth = std::min(minDepth, z_interpolated);
-                    rate += 0.25;
+                    rate += 0.25;  // 如果小像素在三角形内, 采样率就加0.25
                 }
             }
 
             if (rate > 0 && minDepth < depth_buf[get_index(x, y)])
             {
-                depth_buf[get_index(x, y)] = minDepth;
+                depth_buf[get_index(x, y)] = minDepth;   // 这一步也挺重要的,  将深度测试结果更新到深度缓冲区里, 如果不这样, 会出现蓝色三角形在绿色的上面
                 Eigen::Vector3f cur_piexl = {x, y, minDepth};
-                set_pixel(cur_piexl, t.getColor() * rate);
+                set_pixel(cur_piexl, t.getColor() * rate);  // 将颜色值乘以, 最后计算出的采样率
             }
         }
     }
-
-    // TODO : Find out the bounding box of current triangle.
-    // iterate through the pixel and find if the current pixel is inside the triangle
-
-    // If so, use the following code to get the interpolated z value.
-    //auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
-    //float w_reciprocal = 1.0/(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
-    //float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
-    //z_interpolated *= w_reciprocal;
-
-    // TODO : set the current pixel (use the set_pixel function) to the color of the triangle (use getColor function) if it should be painted.
 }
 
 void rst::rasterizer::set_model(const Eigen::Matrix4f& m)
