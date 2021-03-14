@@ -113,7 +113,8 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     if (payload.texture)
     {
         // TODO: Get the texture value at the texture coordinates of the current fragment
-
+        // 获得纹理坐标的颜色
+        return_color = payload.texture->getColor(payload.tex_coords.x(), payload.tex_coords.y());
     }
     Eigen::Vector3f texture_color;
     texture_color << return_color.x(), return_color.y(), return_color.z();
@@ -141,7 +142,24 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     {
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
+        // 光的方向
+		Eigen::Vector3f light_dir = light.position - point;
+		// 视线方向
+		Eigen::Vector3f view_dir = eye_pos - point;
+		// 衰减因子
+		float r = light_dir.dot(light_dir);
 
+		// ambient
+		Eigen::Vector3f La = ka.cwiseProduct(amb_light_intensity);
+		// diffuse
+		Eigen::Vector3f Ld = kd.cwiseProduct(light.intensity / r);
+		Ld *= std::max(0.0f, normal.normalized().dot(light_dir.normalized()));
+		// specular
+		Eigen::Vector3f h = (light_dir + view_dir).normalized();
+		Eigen::Vector3f Ls = ks.cwiseProduct(light.intensity / r);
+		Ls *= std::pow(std::max(0.0f, normal.normalized().dot(h)), p);
+
+		result_color += (La + Ld + Ls);
     }
 
     return result_color * 255.f;
@@ -172,20 +190,20 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
         // 光的方向
-		auto light_dir = light.position - point;
+		Eigen::Vector3f light_dir = light.position - point;
 		// 视线方向
-		auto view_dir = eye_pos - point;
+		Eigen::Vector3f view_dir = eye_pos - point;
 		// 衰减因子
 		float r = light_dir.dot(light_dir);
 
 		// ambient
-		auto La = ka.cwiseProduct(amb_light_intensity);
+		Eigen::Vector3f La = ka.cwiseProduct(amb_light_intensity);
 		// diffuse
-		auto Ld = kd.cwiseProduct(light.intensity / r);
+		Eigen::Vector3f Ld = kd.cwiseProduct(light.intensity / r);
 		Ld *= std::max(0.0f, normal.normalized().dot(light_dir.normalized()));
 		// specular
-		auto h = (light_dir + view_dir).normalized();
-		auto Ls = ks.cwiseProduct(light.intensity / r);
+		Eigen::Vector3f h = (light_dir + view_dir).normalized();
+		Eigen::Vector3f Ls = ks.cwiseProduct(light.intensity / r);
 		Ls *= std::pow(std::max(0.0f, normal.normalized().dot(h)), p);
 
 		result_color += (La + Ld + Ls);
