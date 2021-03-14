@@ -50,7 +50,36 @@ Eigen::Matrix4f get_model_matrix(float angle)
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
     // TODO: Use the same projection matrix from the previous assignments
+    Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
+    float angle = eye_fov * MY_PI / 180.0; 
+	float height = zNear * tan(angle) * 2;
+	float width = height * aspect_ratio;
 
+	auto t = -zNear * tan(angle / 2);  // 上截面
+	auto r = t * aspect_ratio;  //右截面   
+	auto l = -r;  // 左截面
+	auto b = -t;  // 下截面
+    // 透视矩阵-变正交
+    Eigen::Matrix4f persp2ortho;
+    persp2ortho << zNear, 0, 0, 0,
+		0, zNear, 0, 0,
+		0, 0, zNear + zFar, -zNear * zFar,
+		0, 0, 1, 0;
+    // 正交矩阵-缩放
+    Eigen::Matrix4f orthoScale;
+    orthoScale << 2 / (r - l), 0, 0, 0,
+		0, 2 / (t - b), 0, 0,
+		0, 0, 2 / (zNear - zFar), 0,
+		0, 0, 0, 1;
+    // 正交矩阵-平移
+    Eigen::Matrix4f orthoTrans;
+    orthoTrans << 1, 0, 0, -(r + l) / 2,
+		0, 1, 0, -(t + b) / 2,
+		0, 0, 1, -(zNear + zFar) / 2,
+		0, 0, 0, 1;
+
+    projection = orthoScale * orthoTrans * persp2ortho;
+    return projection;
 }
 
 Eigen::Vector3f vertex_shader(const vertex_shader_payload& payload)
@@ -142,7 +171,24 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     {
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
-        
+        // 光的方向
+		auto light_dir = light.position - point;
+		// 视线方向
+		auto view_dir = eye_pos - point;
+		// 衰减因子
+		float r = light_dir.dot(light_dir);
+
+		// ambient
+		auto La = ka.cwiseProduct(amb_light_intensity);
+		// diffuse
+		auto Ld = kd.cwiseProduct(light.intensity / r);
+		Ld *= std::max(0.0f, normal.normalized().dot(light_dir.normalized()));
+		// specular
+		auto h = (light_dir + view_dir).normalized();
+		auto Ls = ks.cwiseProduct(light.intensity / r);
+		Ls *= std::pow(std::max(0.0f, normal.normalized().dot(h)), p);
+
+		result_color += (La + Ld + Ls);
     }
 
     return result_color * 255.f;
