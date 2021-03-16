@@ -24,12 +24,22 @@ eigen3/Eigen/Eigen
 Texture.hpp
 /Users/wangtao/Desktop/games101/Assignment3/Code/Texture.hpp
 
+/Users/wangtao/Desktop/games101/Assignment3/Code/Texture.cpp
+
 /Users/wangtao/Desktop/games101/Assignment3/Code/Texture.hpp
 global.hpp
 /Users/wangtao/Desktop/games101/Assignment3/Code/global.hpp
 eigen3/Eigen/Eigen
 -
 opencv2/opencv.hpp
+-
+
+/Users/wangtao/Desktop/games101/Assignment3/Code/Triangle.cpp
+Triangle.hpp
+/Users/wangtao/Desktop/games101/Assignment3/Code/Triangle.hpp
+algorithm
+-
+array
 -
 
 /Users/wangtao/Desktop/games101/Assignment3/Code/Triangle.hpp
@@ -57,6 +67,16 @@ Texture.hpp
 /Users/wangtao/Desktop/games101/Assignment3/Code/Texture.hpp
 OBJ_Loader.h
 /Users/wangtao/Desktop/games101/Assignment3/Code/OBJ_Loader.h
+
+/Users/wangtao/Desktop/games101/Assignment3/Code/rasterizer.cpp
+algorithm
+-
+rasterizer.hpp
+/Users/wangtao/Desktop/games101/Assignment3/Code/rasterizer.hpp
+opencv2/opencv.hpp
+-
+math.h
+-
 
 /Users/wangtao/Desktop/games101/Assignment3/Code/rasterizer.hpp
 eigen3/Eigen/Eigen
